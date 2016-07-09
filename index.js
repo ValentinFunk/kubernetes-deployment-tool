@@ -7,7 +7,7 @@ var request = require('request-promise'),
 
 var deploymentWaitTimeout = process.env.DEPLOY_WAIT_TIMEOUT || 120;
 var replicaAvailableTimeout = process.env.REPLICA_WAIT_TIMEOUT || 120;
-var namespace = process.env.NAMESPACE || 'default';
+var namespace = process.env.KUBE_NAMESPACE || 'default';
 
 // A deployment error causes a rollback of the specified deployments
 function DeploymentError(message, deployments) {
@@ -216,8 +216,9 @@ function performDeployment() {
   })
   .catch(function(e) {
     if (e instanceof DeploymentError) {
-      console.log("DEPLOYMENT FAILED: " + e.message, "Rolling Back Services " + e.deployments.join(', '));
-      return Promise.map(e.deployments, (deployment) => {
+      var deploymentsToRollback = _.filter(e.deployments, changedDeployments.includes.bind(changedDeployments));
+      console.log("DEPLOYMENT FAILED: " + e.message, "Rolling Back Deployments " + deploymentsToRollback.join(', '));
+      return Promise.map(deploymentsToRollback, (deployment) => {
         return exec(`kubectl rollout undo deployment ${deployment} --namespace=${namespace}`).then((p) => {
           console.log(p.stdout);
         });
