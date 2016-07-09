@@ -18,7 +18,9 @@ The deployment.yaml file should contain service and deployment definitions.
 6. If a failure is detected in step 4 or 5 (or the checks have timed out after the specified interval) all changed deployments are rolled back via `kubectl rollout undo`.
 
 ## Setup 
-The script calls kubectl processes instead of using the API, so simply configure a kubectl in the path. Available Configuration via Environment Variables:
+The script calls kubectl processes instead of using the API, so simply configure a kubectl in the path. 
+
+Additional, optional configuration via Environment Variables:
 - `DEPLOY_WAIT_TIMEOUT` (default 120): Timeout in s for the changing of ReplicaSets.
 - `REPLICA_WAIT_TIMEOUT` (default 120): Timeout in s for reaching the desired amount of Replicas. 
 - `SERVICE_READY_TIMEOUT` (default 120): Timeout in s for waiting until a Service is ready.
