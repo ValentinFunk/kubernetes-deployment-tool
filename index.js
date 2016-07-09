@@ -7,7 +7,12 @@ var request = require('request-promise'),
 
 var deploymentWaitTimeout = process.env.DEPLOY_WAIT_TIMEOUT || 120;
 var replicaAvailableTimeout = process.env.REPLICA_WAIT_TIMEOUT || 120;
-var namespace = process.env.KUBE_NAMESPACE || 'default';
+var serviceReadyTimeout = process.env.SERVICE_READY_TIMEOUT || 120;
+
+var namespaceArg = "";
+if (process.env.KUBE_NAMESPACE) {
+  namespaceArg = `--namespace=${process.env.KUBE_NAMESPACE}`;
+}
 
 // A deployment error causes a rollback of the specified deployments
 function DeploymentError(message, deployments) {
@@ -19,7 +24,7 @@ DeploymentError.prototype = Object.create(Error.prototype);
 
 // Wrapper function to spawn a kubectl process and parse stdout as JSON
 function kubectl(args) {
-  return exec(`kubectl --namespace=${namespace} -o json ${args}`).then(function(result) {
+  return exec(`kubectl ${namespaceArg} -o json ${args}`).then(function(result) {
     return JSON.parse(result.stdout);
   });
 }
@@ -57,7 +62,7 @@ function waitForService(serviceName, timeout) {
           return isReady && isRunning;
         });
       });
-    }, 1000, replicaAvailableTimeout * 1000);
+    }, 1000, serviceReadyTimeout * 1000);
   });
 }
 
@@ -70,7 +75,7 @@ function performDeploymentAndWaitUntilApplied(deployedGenerations) {
   .then(() => {
     console.log("Calling kubectl to apply changes...");
     return new Promise((resolve, reject) => {
-      var kubectlSpawned = spawn('kubectl', [`--namespace=${namespace}`, 'apply', '-o', 'name', '-f', '-']);
+      var kubectlSpawned = spawn('kubectl', [namespaceArg, 'apply', '-o', 'name', '-f', '-']);
       process.stdin.pipe(kubectlSpawned.stdin);
 
       kubectlSpawned.stdout.on('data', function (data) {
@@ -219,7 +224,7 @@ function performDeployment() {
       var deploymentsToRollback = _.filter(e.deployments, changedDeployments.includes.bind(changedDeployments));
       console.log("DEPLOYMENT FAILED: " + e.message, "Rolling Back Deployments " + deploymentsToRollback.join(', '));
       return Promise.map(deploymentsToRollback, (deployment) => {
-        return exec(`kubectl rollout undo deployment ${deployment} --namespace=${namespace}`).then((p) => {
+        return exec(`kubectl rollout undo deployment ${deployment} ${namespaceArg}`).then((p) => {
           console.log(p.stdout);
         });
       })
