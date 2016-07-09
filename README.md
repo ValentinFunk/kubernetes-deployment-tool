@@ -1,20 +1,25 @@
 # Kubernetes Deployment Helper
 
-This script helps you deploying microservices into Kubernetes. It monitors the Deployment, waits until it is truly finished (Services are available) and performs a Rollback on failure. It is supposed to be called like this:
+This script helps you __deploying microservices into Kubernetes__. It monitors the Deployment, waits until it is truly finished (Services are available) and performs a Rollback on failure. 
+
+It is called like this:
 ```
 echo deployment.yaml | node index.js 
 ```
 The deployment.yaml file should contain service and deployment definitions.
 
-It works as follows:
-1) The current versions of all active deployments are fetched.
-2) kubectl apply is called to apply changes. For deployments kubectl rollout status is called to wait until replicasets have been updated.
-3) The new versions of all applied deployments are fetched and compared to the versions from step 1 to find out which have been changed.
-4) The cluster is polled to wait until the desired amount of replicas is available (deployment.status.availableReplicas == deployment.spec.replicas)
-5) For each service that was included in the yaml: Get Pods and wait until at least one is healthy & ready (readinessProbe passed)
-6) If a failure is detected in step 4 or 5 (or the checks have timed out after the specified interval) all changed deployments are rolled back via kubectl rollout undo.
+## How it works
 
-Example output (the products-service deployment was updated):
+1. The current versions of all active deployments are fetched.
+2. `kubectl apply` is called to apply changes. For deployments kubectl rollout status is called to wait until replicasets have been updated.
+3. The new versions of all applied deployments are fetched and compared to the versions from step 1 to find out which have been changed.
+4. The cluster is polled to wait until the desired amount of replicas is available (`deployment.status.availableReplicas == deployment.spec.replicas`)
+5. For each service that was included in the yaml: Get Pods and wait until at least one is healthy & ready (readinessProbe passed)
+6. If a failure is detected in step 4 or 5 (or the checks have timed out after the specified interval) all changed deployments are rolled back via `kubectl rollout undo`.
+
+## Example
+
+In this example the products-service deployment was updated:
 ```
 cat target-state.yaml | node index.js kubectl rollout status deployment mysql
 Calling kubectl to apply changes...
