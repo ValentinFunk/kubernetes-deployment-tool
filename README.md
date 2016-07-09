@@ -1,6 +1,6 @@
 # Kubernetes Deployment Helper
 
-This script helps you __deploying microservices into Kubernetes__. It monitors the Deployment, waits until it is truly finished (Services are available) and performs a Rollback on failure. 
+This script helps you __deploy microservices into Kubernetes__. It monitors the Deployment, waits until it is truly finished (Services are available) and performs a Rollback on failure. 
 
 It is called like this:
 ```
