@@ -1,6 +1,6 @@
 var request = require('request-promise'),
     Promise = require('bluebird'),
-    exec = require('child-process-Promise').exec,
+    exec = require('child-process-promise').exec,
     spawn = require('child_process').spawn,
     _ = require('lodash'),
     repeatUntilSuccessful = require('./repeatUntilSuccessful');
