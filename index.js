@@ -47,7 +47,7 @@ function waitForLoadbalancer(serviceName, timeout) {
         .then(_.property('status.loadBalancer.ingress[0].ip'));
       }, 1000, serviceReadyTimeout * 1000);
     } else {
-      return service.spec.type + " " + service.spec.clusterIP;
+      return `${service.spec.type}(${service.spec.clusterIP})`;
     }
   })
 }
