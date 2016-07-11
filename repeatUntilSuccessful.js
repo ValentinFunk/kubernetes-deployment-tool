@@ -14,6 +14,7 @@ module.exports = function repeatUntilSuccessful(op, delay, timeout) {
         return Promise.delay(delay)
           .then(repeater.bind(null, op, delay));
       }
+      return success;
     });
   }
 

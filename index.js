@@ -1,6 +1,6 @@
 var request = require('request-promise'),
     Promise = require('bluebird'),
-    exec = require('child-process-promise').exec,
+    exec = require('child-process-Promise').exec,
     spawn = require('child_process').spawn,
     _ = require('lodash'),
     repeatUntilSuccessful = require('./repeatUntilSuccessful');
@@ -33,22 +33,30 @@ function kubectl(args) {
 function pollAvailableReplicas(deploymentName, timeout) {
   return repeatUntilSuccessful(() => {
     return kubectl('get deployment ' + deploymentName).then((deployment) => {
-      return deployment.status.availableReplicas >= deployment.spec.replicas;
+      return deployment.status.availableReplicas >= deployment.spec.replicas && deployment.status.availableReplicas;
     });
   }, 1000, replicaAvailableTimeout * 1000);
+}
+
+function waitForLoadbalancer(serviceName, timeout) {
+  return repeatUntilSuccessful(() => {
+    return kubectl(`get service ${serviceName}`)
+    .then(_.property('status.loadBalancer.ingress[0].ip'));
+  }, 1000, serviceReadyTimeout * 1000);
 }
 
 function waitForService(serviceName, timeout) {
   var selectorArg;
   return Promise.resolve().then(() => {
-    return kubectl('get service ' + serviceName);
+    return kubectl(`get service ${serviceName}`);
   }).then((service) => {
     var selectorPairs = _.toPairs(service.spec.selector);
     var selectorArray = selectorPairs.map((pair) => {
       return pair[0] + "=" + pair[1];
     });
     selectorArg = "-l " + selectorArray.join(',');
-  }).then(() => {
+  })
+  .then(() => {
     return repeatUntilSuccessful(() => {
       return kubectl(`get pods ${selectorArg}`)
       .then((pods) => {
@@ -181,8 +189,8 @@ function performDeployment() {
     var failedDeployments = [];
     return Promise.map(changedDeployments, (deploymentName) => {
       return pollAvailableReplicas(deploymentName)
-      .then(() => {
-        console.log(`\t${deploymentName} replicas updated`);
+      .then((replicaNum) => {
+        console.log(`\t${deploymentName} replicas updated (${replicaNum} replicas)`);
       }).catch((error) => {
         console.error(`\t${deploymentName} ERROR: ${error.message}`);
         failedDeployments.push(deploymentName);
@@ -210,6 +218,28 @@ function performDeployment() {
         if (failedServices.length > 0) {
           // this requires ServiceName == DeploymentName
           throw new DeploymentError("Failed to verify services for", failedServices);
+        }
+      });
+    } else {
+      console.log("SKIPPING: No services were configured");
+    }
+  })
+  .then(function waitForLbs() {
+    console.log("Waiting for endpoints to become available...");
+    if (configuredObjects.service && configuredObjects.service.length > 0) {
+      var failedServices = [];
+      return Promise.map(configuredObjects.service, (serviceName) => {
+        return waitForLoadbalancer(serviceName).then((endpoint) => {
+          console.log(`\t${serviceName} at ${endpoint}`);
+        }).catch((error) => {
+          console.log(`\t${serviceName} ERROR ${error.message}`);
+          failedServices.push(serviceName);
+          return Promise.resolve();
+        });
+      }).then(function() {
+        if (failedServices.length > 0) {
+          // this requires ServiceName == DeploymentName
+          throw new DeploymentError("Failed to get endpoints for", failedServices);
         }
       });
     } else {
