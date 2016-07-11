@@ -39,10 +39,17 @@ function pollAvailableReplicas(deploymentName, timeout) {
 }
 
 function waitForLoadbalancer(serviceName, timeout) {
-  return repeatUntilSuccessful(() => {
-    return kubectl(`get service ${serviceName}`)
-    .then(_.property('status.loadBalancer.ingress[0].ip'));
-  }, 1000, serviceReadyTimeout * 1000);
+  return kubectl(`get service ${serviceName}`)
+  .then((service) => {
+    if (service.spec.type == "LoadBalancer") {
+      return repeatUntilSuccessful(() => {
+        return kubectl(`get service ${serviceName}`)
+        .then(_.property('status.loadBalancer.ingress[0].ip'));
+      }, 1000, serviceReadyTimeout * 1000);
+    } else {
+      return service.spec.type + " " + service.spec.clusterIP;
+    }
+  })
 }
 
 function waitForService(serviceName, timeout) {
