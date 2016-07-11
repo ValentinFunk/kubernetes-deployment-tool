@@ -14,8 +14,10 @@ The deployment.yaml file should contain service and deployment definitions.
 2. `kubectl apply` is called to apply changes. For deployments kubectl rollout status is called to wait until replicasets have been updated.
 3. The new versions of all applied deployments are fetched and compared to the versions from step 1 to find out which have been changed.
 4. The cluster is polled to wait until the desired amount of replicas is available (`deployment.status.availableReplicas == deployment.spec.replicas`)
-5. For each service that was included in the yaml: Get Pods and wait until at least one is healthy & ready (readinessProbe passed)
-6. If a failure is detected in step 4 or 5 (or the checks have timed out after the specified interval) all changed deployments are rolled back via `kubectl rollout undo`.
+5. For each service that was included in the applied YAML: 1) Pods are polled and it waits until at least one is healthy & ready (readinessProbe passed) 2) If `service.spec.type == "LoadBalancer"` the script waits until the Load Balancer has been created and an external endpoint is available
+6. a) If a failure is detected in step 4 or 5 (or the checks have timed out after the specified interval) all changed deployments are rolled back via `kubectl rollout undo`.
+   
+   b) If the deployment was successful, deployments that were changed (c.f. step 3) are written to deployments.txt (one deployment per line). At this stage you could run your e2e tests and use `kubectl rollout undo` if they fail.
 
 ## Setup 
 The script calls kubectl processes instead of using the API, so simply configure a kubectl in the path. 
@@ -49,14 +51,21 @@ Waiting until deployments mongodb, products-service, mysql, users-service, web-s
 All deployments have been rolled out. Fetching changes...
         mongodb UNCHANGED
         mysql UNCHANGED
-        products-service V 39 => 41
+        products-service V 10 => 12
         users-service UNCHANGED
         web-service UNCHANGED
+        products-service replicas updated (1 replicas)
 Waiting for services to become available...
+        products-service running & ready
+        mysql running & ready
         mongodb running & ready
         web-service running & ready
-        mysql running & ready
-        products-service running & ready
         users-service running & ready
-Deployment Successful
+Waiting for endpoints to become available...
+        mongodb at ClusterIP(10.115.247.255)
+        mysql at ClusterIP(10.115.241.2)
+        web-service at 146.138.25.181
+        products-service at 120.211.81.47
+        users-service at 104.157.69.189
+Deployment Successful, writing deployments.txt...
 ```
