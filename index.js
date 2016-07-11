@@ -3,7 +3,8 @@ var request = require('request-promise'),
     exec = require('child-process-promise').exec,
     spawn = require('child_process').spawn,
     _ = require('lodash'),
-    repeatUntilSuccessful = require('./repeatUntilSuccessful');
+    repeatUntilSuccessful = require('./repeatUntilSuccessful'),
+    fs = Promise.promisifyAll(require('fs'));
 
 var deploymentWaitTimeout = process.env.DEPLOY_WAIT_TIMEOUT || 120;
 var replicaAvailableTimeout = process.env.REPLICA_WAIT_TIMEOUT || 120;
@@ -254,7 +255,9 @@ function performDeployment() {
     }
   })
   .then(() => {
-    console.log("Deployment Successful");
+    console.log("Deployment Successful, writing deployments.txt...");
+    var deploymentsStr = changedDeployments.join('\n');
+    return fs.writeFileAsync("deployments.txt", deploymentsStr);
   })
   .catch(function(e) {
     if (e instanceof DeploymentError) {
