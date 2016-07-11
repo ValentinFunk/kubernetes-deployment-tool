@@ -91,7 +91,11 @@ function performDeploymentAndWaitUntilApplied(deployedGenerations) {
   .then(() => {
     console.log("Calling kubectl to apply changes...");
     return new Promise((resolve, reject) => {
-      var kubectlSpawned = spawn('kubectl', [namespaceArg, 'apply', '-o', 'name', '-f', '-']);
+      var args = ['apply', '-o', 'name', '-f', '-'];
+      if (namespaceArg != "") {
+        args.unshift(namespaceArg);
+      }
+      var kubectlSpawned = spawn('kubectl', args);
       process.stdin.pipe(kubectlSpawned.stdin);
 
       kubectlSpawned.stdout.on('data', function (data) {
