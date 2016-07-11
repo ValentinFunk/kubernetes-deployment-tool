@@ -270,13 +270,14 @@ function performDeployment() {
       })
       .then(() => {
         console.log("Rollback Finished");
+        throw new Error("Deployment failed, rollback performed");
       }, (error) => {
-        console.log("Error rolling back", error);
+        throw new Error("Error rolling back", error);
       });
     } else {
       console.error(e);
+      throw e;
     }
-    process.exit(1);
   });
 }
 
