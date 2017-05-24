@@ -4,7 +4,7 @@ This script helps you __deploy microservices into Kubernetes__. It monitors the 
 
 It is called like this:
 ```
-echo deployment.yaml | node index.js 
+cat deployment.yaml | node index.js 
 ```
 The deployment.yaml file should contain service and deployment definitions.
 
@@ -32,7 +32,7 @@ Additional, optional configuration via Environment Variables:
 
 In this example the products-service deployment was updated:
 ```
-cat target-state.yaml | node index.js kubectl rollout status deployment mysql
+cat target-state.yaml | node index.js 
 Calling kubectl to apply changes...
 [KUBECTL] service/mongodb
 [KUBECTL] deployment/mongodb
