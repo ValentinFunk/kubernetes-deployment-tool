@@ -285,4 +285,4 @@ function performDeployment() {
   });
 }
 
-performDeployment();
+performDeployment().then(() => process.exit(0), () => process.exit(1));
